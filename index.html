@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Автономный патрульный</title>
+<style>
+  :root { --bg:#fafaf8; --fg:#1d1d1b; --muted:#5b5b57; --card:#fff; --line:#e3e3de; --accent:#1f6f9f; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#151515; --fg:#ececea; --muted:#a5a5a0; --card:#1f1f1e; --line:#33332f; --accent:#6bb3df; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width:980px; margin:0 auto; padding:32px 16px 64px; }
+  h1 { font-size:2rem; line-height:1.2; margin:0 0 8px; }
+  h2 { margin-top:40px; font-size:1.3rem; border-bottom:1px solid var(--line); padding-bottom:6px; }
+  .lead { color:var(--muted); font-size:1.1rem; margin:0 0 24px; }
+  figure { margin:16px 0; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px; }
+  figure img { width:100%; height:auto; display:block; border-radius:6px; background:#fff; }
+  figcaption { color:var(--muted); font-size:.9rem; margin-top:8px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px; }
+  table { border-collapse:collapse; width:100%; font-size:.95rem; }
+  th, td { border:1px solid var(--line); padding:6px 10px; text-align:left; vertical-align:top; }
+  th { background:var(--card); }
+  .no { color:#c0392b; } .ok { color:#2e8b57; }
+  a { color:var(--accent); }
+  footer { margin-top:48px; color:var(--muted); font-size:.85rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Автономный патрульный: охрана периметра</h1>
+  <p class="lead">Школьный исследовательский проект «Сириус.Лето». Вопрос проекта: как должен ездить ровер-охранник вдоль забора,
+    чтобы нарушитель был обнаружен быстрее всего, и помогает ли ему дрон.</p>
+
+  <figure>
+    <img src="img/cover.png" alt="Карта промышленной площадки в Майкопе: забор, здания, дорога патруля с контрольными точками, путь ровера и нарушителя">
+    <figcaption>Реальная площадка (по данным OpenStreetMap), дорога патруля и пример эпизода в 2D-модели.</figcaption>
+  </figure>
+
+  <h2>Как это работает</h2>
+  <ol>
+    <li>Забор и здания взяты из OpenStreetMap; вдоль забора проложена дорога патруля с контрольными точками.</li>
+    <li>Участки у ворот, за зданиями и в темноте «опаснее» — туда нарушитель лезет чаще.</li>
+    <li>Ровер выбирает следующую точку по одной из трёх стратегий: всегда по кругу, случайно или чаще к опасным участкам.</li>
+    <li>«Наивный» нарушитель приходит в случайный момент, «умный» — сразу после того, как ровер уехал.</li>
+    <li>Тепловизор ровера замечает человека, если тот близко и не закрыт зданием; по тревоге взлетает дрон.</li>
+    <li>Тысячи прогонов с одинаковыми условиями для всех стратегий дают таблицы, графики и статистические критерии.</li>
+  </ol>
+
+  <div class="grid">
+    <figure>
+      <img src="img/demo.gif" alt="Анимация: ровер объезжает площадку, нарушитель подходит к забору, ровер его обнаруживает, вылетает дрон">
+      <figcaption>Демо одного эпизода 2D-стенда (около 30 с).</figcaption>
+    </figure>
+    <figure>
+      <img src="img/gazebo_tb3.png" alt="Сцена Gazebo: мир TurtleBot3 сверху, робот в центре, синие лучи лидара">
+      <figcaption>Тот же узел стратегии в ROS 2 Humble + Gazebo + Nav2 (робот TurtleBot3) на обычном ПК через WSL. Робот прошёл 7 точек патруля подряд.</figcaption>
+    </figure>
+  </div>
+
+  <h2>Результаты</h2>
+  <table>
+    <tr><th>Критерий из плана</th><th>Цель</th><th>Получено</th></tr>
+    <tr><td>Симуляций в эксперименте</td><td>≥ 240</td><td class="ok">240 по плану, 3960 всего</td></tr>
+    <tr><td>Выигрыш лучшей стратегии против круга («умный» нарушитель)</td><td>≥ 35 %</td><td class="no">13 % (различие значимо)</td></tr>
+    <tr><td>Ускорение подтверждения тревоги дроном</td><td>≥ 2 раз</td><td class="no">0,82 раза, но простой ровера 62 → 5 с</td></tr>
+    <tr><td>Пропуски у лучшей стратегии</td><td>≤ 5 %</td><td class="no">72–76 % одним ровером; 3 ровера: у круга 0 %</td></tr>
+  </table>
+  <p>Гипотеза в исходной формулировке не подтвердилась: одному роверу не хватает скорости на периметр такого размера.
+    Это тоже результат: он показывает, сколько роверов или датчиков нужно на самом деле.</p>
+
+  <div class="grid">
+    <figure><img src="img/detect_time.png" alt="Диаграммы времени до обнаружения для трёх стратегий и двух типов нарушителя"><figcaption>Время до обнаружения по стратегиям.</figcaption></figure>
+    <figure><img src="img/miss_prevent.png" alt="Столбчатые диаграммы доли пропусков и доли обнаружений до хищения"><figcaption>Пропуски и обнаружения до хищения.</figcaption></figure>
+    <figure><img src="img/stand.png" alt="Столбчатые диаграммы пропусков: идеальный датчик против датчика с шумом и задержкой"><figcaption>Виртуальный стенд: шум датчика и задержка связи почти не меняют результат.</figcaption></figure>
+  </div>
+
+  <h2>Ограничения</h2>
+  <p>Все результаты получены в симуляции. Поведение нарушителя упрощено, погода и помехи связи не моделируются.
+    В Gazebo проверена работа узла стратегии на учебном мире TurtleBot3 (точки площадки уменьшены в масштабе), а не на модели реального объекта.</p>
+
+  <footer>Карта: © участники OpenStreetMap, лицензия ODbL. Код проекта: Python (numpy, scipy, matplotlib, shapely), ROS 2 Humble, Nav2, Gazebo Classic.
+    Страница не использует cookie и не собирает данные.</footer>
+</main>
+</body>
+</html>
